@@ -14,7 +14,7 @@ name: "Build & Release"
 jobs:
   build:
     name: Build & Release
-    runs-on: macos-latest
+    runs-on: macos-latest # macos-latest supports iOS + other platforms
     steps:
       - uses: actions/checkout@v3
 
@@ -30,9 +30,27 @@ jobs:
 
       - run: flutter pub get
 
+      # Build Android APK
       - run: flutter build apk --release --split-per-abi
 
+      # Build iOS IPA (no code signing)
       - run: flutter build ipa --no-codesign
+
+      # Build Web
+      - run: flutter build web
+
+      # Build macOS app
+      - run: flutter build macos
+
+      # Build Windows app (requires Windows runner)
+      - name: Build Windows
+        if: runner.os == 'Windows'
+        run: flutter build windows
+
+      # Build Linux app (requires Linux runner)
+      - name: Build Linux
+        if: runner.os == 'Linux'
+        run: flutter build linux
 
       - name: Push to Releases
         uses: ncipollo/release-action@v1
@@ -40,5 +58,9 @@ jobs:
           artifacts: |
             build/app/outputs/apk/release/*.apk
             build/ios/ipa/*.ipa
+            build/web/**
+            build/macos/Build/Products/Release/*.app
+            build/windows/runner/Release/*.exe
+            build/linux/runner/*.AppImage
           tag: v1.0.${{ github.run_number }}
           token: ${{ secrets.TOKEN }}
